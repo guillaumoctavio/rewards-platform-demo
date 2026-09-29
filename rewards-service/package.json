@@ -1,0 +1,19 @@
+{
+  "name": "rewards-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "jest": "^30.5.2"
+  }
+}
