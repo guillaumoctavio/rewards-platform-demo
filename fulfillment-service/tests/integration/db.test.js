@@ -1,5 +1,5 @@
 process.env.DATABASE_URL =
-  process.env.DATABASE_URL || 'postgres://postgres:demo@localhost:5432/rewards_demo';
+  process.env.DATABASE_URL || 'postgres://postgres:demo@localhost:5433/rewards_demo';
 
 const db = require('../../src/db');
 
