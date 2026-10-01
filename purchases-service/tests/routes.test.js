@@ -35,9 +35,23 @@ describe('POST /purchases', () => {
     expect(res.status).toBe(400);
     expect(producer.sendPurchaseCreated).not.toHaveBeenCalled();
   });
+
+  it('rejects a negative amount', async () => {
+    const res = await request(app).post('/purchases').send({ customerId: 'c1', amount: -50 });
+    expect(res.status).toBe(400);
+    expect(db.insertPurchase).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-string customerId', async () => {
+    const res = await request(app).post('/purchases').send({ customerId: 123, amount: 80 });
+    expect(res.status).toBe(400);
+    expect(db.insertPurchase).not.toHaveBeenCalled();
+  });
 });
 
 describe('GET /purchases/:id', () => {
+  beforeEach(() => jest.clearAllMocks());
+
   it('returns the purchase when found', async () => {
     db.getPurchase.mockResolvedValue({ id: 1, customer_id: 'c1', amount: '80' });
     const res = await request(app).get('/purchases/1');
@@ -49,5 +63,11 @@ describe('GET /purchases/:id', () => {
     db.getPurchase.mockResolvedValue(undefined);
     const res = await request(app).get('/purchases/999');
     expect(res.status).toBe(404);
+  });
+
+  it('rejects a non-numeric id', async () => {
+    const res = await request(app).get('/purchases/abc');
+    expect(res.status).toBe(400);
+    expect(db.getPurchase).not.toHaveBeenCalled();
   });
 });

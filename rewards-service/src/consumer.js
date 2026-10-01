@@ -7,7 +7,13 @@ const kafka = new Kafka({ clientId: 'rewards-service', brokers: [process.env.KAF
 const consumer = kafka.consumer({ groupId: 'rewards-service' });
 
 async function handleMessage({ message }) {
-  const event = JSON.parse(message.value.toString());
+  let event;
+  try {
+    event = JSON.parse(message.value.toString());
+  } catch (err) {
+    console.error('skipping unparseable message', err);
+    return;
+  }
   if (event.type !== 'purchase.created') return;
 
   const eligible = isEligible(event.amount);
@@ -18,7 +24,9 @@ async function handleMessage({ message }) {
     status: eligible ? 'issued' : 'denied',
   };
 
-  await db.insertReward(reward);
+  const inserted = await db.insertReward(reward);
+  if (!inserted) return; // already processed this purchaseId
+
   await sendRewardEvent({
     type: eligible ? 'reward.issued' : 'reward.denied',
     purchaseId: reward.purchaseId,

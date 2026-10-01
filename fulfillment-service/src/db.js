@@ -6,7 +6,7 @@ async function ensureSchema() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS deliveries (
       id SERIAL PRIMARY KEY,
-      purchase_id INTEGER NOT NULL,
+      purchase_id INTEGER NOT NULL UNIQUE,
       customer_id TEXT NOT NULL,
       reward_type TEXT NOT NULL,
       delivered_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -16,7 +16,10 @@ async function ensureSchema() {
 
 async function insertDelivery({ purchaseId, customerId, rewardType }) {
   const { rows } = await pool.query(
-    'INSERT INTO deliveries (purchase_id, customer_id, reward_type) VALUES ($1, $2, $3) RETURNING *',
+    `INSERT INTO deliveries (purchase_id, customer_id, reward_type)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (purchase_id) DO NOTHING
+     RETURNING *`,
     [purchaseId, customerId, rewardType]
   );
   return rows[0];

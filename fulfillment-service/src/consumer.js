@@ -5,7 +5,13 @@ const kafka = new Kafka({ clientId: 'fulfillment-service', brokers: [process.env
 const consumer = kafka.consumer({ groupId: 'fulfillment-service' });
 
 async function handleMessage({ message }) {
-  const event = JSON.parse(message.value.toString());
+  let event;
+  try {
+    event = JSON.parse(message.value.toString());
+  } catch (err) {
+    console.error('skipping unparseable message', err);
+    return;
+  }
   if (event.type !== 'reward.issued') return;
 
   await db.insertDelivery({

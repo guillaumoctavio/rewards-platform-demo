@@ -27,4 +27,12 @@ describe('handleMessage', () => {
 
     expect(db.insertDelivery).not.toHaveBeenCalled();
   });
+
+  it('skips an unparseable message without throwing', async () => {
+    await expect(
+      handleMessage({ message: { value: Buffer.from('not json') } })
+    ).resolves.toBeUndefined();
+
+    expect(db.insertDelivery).not.toHaveBeenCalled();
+  });
 });

@@ -3,12 +3,10 @@ const { Kafka } = require('kafkajs');
 const kafka = new Kafka({ clientId: 'purchases-service', brokers: [process.env.KAFKA_BROKER] });
 const producer = kafka.producer();
 
-let connected = false;
-async function connect() {
-  if (!connected) {
-    await producer.connect();
-    connected = true;
-  }
+let connectPromise = null;
+function connect() {
+  if (!connectPromise) connectPromise = producer.connect();
+  return connectPromise;
 }
 
 async function sendPurchaseCreated(purchase) {

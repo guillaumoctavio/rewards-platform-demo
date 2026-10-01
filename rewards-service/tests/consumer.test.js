@@ -19,6 +19,8 @@ describe('handleMessage', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('issues a reward for an eligible purchase', async () => {
+    db.insertReward.mockResolvedValue({ id: 1 });
+
     await handleMessage(purchaseCreatedMessage(80));
 
     expect(db.insertReward).toHaveBeenCalledWith({
@@ -36,6 +38,8 @@ describe('handleMessage', () => {
   });
 
   it('denies a reward for a non-eligible purchase', async () => {
+    db.insertReward.mockResolvedValue({ id: 1 });
+
     await handleMessage(purchaseCreatedMessage(10));
 
     expect(db.insertReward).toHaveBeenCalledWith({
@@ -57,5 +61,22 @@ describe('handleMessage', () => {
 
     expect(db.insertReward).not.toHaveBeenCalled();
     expect(producer.sendRewardEvent).not.toHaveBeenCalled();
+  });
+
+  it('does not republish when the purchase was already processed', async () => {
+    db.insertReward.mockResolvedValue(undefined);
+
+    await handleMessage(purchaseCreatedMessage(80));
+
+    expect(db.insertReward).toHaveBeenCalled();
+    expect(producer.sendRewardEvent).not.toHaveBeenCalled();
+  });
+
+  it('skips an unparseable message without throwing', async () => {
+    await expect(
+      handleMessage({ message: { value: Buffer.from('not json') } })
+    ).resolves.toBeUndefined();
+
+    expect(db.insertReward).not.toHaveBeenCalled();
   });
 });

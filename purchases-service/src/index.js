@@ -5,6 +5,11 @@ const db = require('./db');
 const app = express();
 app.use(express.json());
 app.use(routes);
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'internal server error' });
+});
 
 if (require.main === module) {
   const port = process.env.PORT || 3000;
