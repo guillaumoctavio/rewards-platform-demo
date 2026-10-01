@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: purchases-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: purchases-service }
+  template:
+    metadata:
+      labels: { app: purchases-service }
+    spec:
+      containers:
+        - name: purchases-service
+          image: ghcr.io/guillaumoctavio/purchases-service:latest
+          ports: [{ containerPort: 3000 }]
+          envFrom:
+            - secretRef: { name: rewards-platform-secrets }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: purchases-service
+spec:
+  selector: { app: purchases-service }
+  ports: [{ port: 80, targetPort: 3000 }]

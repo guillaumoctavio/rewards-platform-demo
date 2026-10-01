@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fulfillment-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: fulfillment-service }
+  template:
+    metadata:
+      labels: { app: fulfillment-service }
+    spec:
+      containers:
+        - name: fulfillment-service
+          image: ghcr.io/guillaumoctavio/fulfillment-service:latest
+          ports: [{ containerPort: 3000 }]
+          envFrom:
+            - secretRef: { name: rewards-platform-secrets }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fulfillment-service
+spec:
+  selector: { app: fulfillment-service }
+  ports: [{ port: 80, targetPort: 3000 }]
