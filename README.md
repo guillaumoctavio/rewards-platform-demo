@@ -43,6 +43,13 @@ cd fulfillment-service && npm run test:integration
 
 `k8s/` contains the manifests: a Deployment (and Service, for the HTTP services) per service, an example Secret, and an ArgoCD Application. You don't need a running cluster to review them.
 
+## Design notes
+
+- **Duplicate events:** Kafka delivers at-least-once. Each consumer insert is idempotent (`UNIQUE(purchase_id)` + `ON CONFLICT DO NOTHING`), and a message that changes nothing is not republished. Replaying a `purchase.created` does not create a second reward or delivery.
+- **Retries and bad messages:** kafkajs retries failing handlers with backoff. Unparseable messages are logged and skipped so they can't crash the consumer. There is no dead-letter topic yet, so a message that keeps failing blocks its partition.
+- **Known gap:** the purchase row is written before the event is published. If Kafka is down at that moment, the purchase exists without its event. In production I'd use the transactional outbox pattern: write the event to an `outbox` table in the same transaction and have a relay publish it.
+- **Production additions:** a dead-letter topic with alerting, consumer lag and error-rate metrics (Prometheus/Grafana), a schema registry for event contracts, and versioned migrations instead of `CREATE TABLE IF NOT EXISTS` at startup.
+
 ---
 
 Simplified demo inspired by a production event-driven platform I built and operated for Brazil's largest banks (50+ microservices, 500K+ transactions/day, Kafka + Kubernetes/ArgoCD).

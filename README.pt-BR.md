@@ -43,6 +43,13 @@ cd fulfillment-service && npm run test:integration
 
 A pasta `k8s/` contém os manifests: um Deployment (e um Service, nos serviços HTTP) por serviço, um Secret de exemplo e uma Application do ArgoCD. Não é preciso ter um cluster rodando para revisá-los.
 
+## Decisões de design
+
+- **Eventos duplicados:** o Kafka entrega pelo menos uma vez. Cada insert dos consumers é idempotente (`UNIQUE(purchase_id)` + `ON CONFLICT DO NOTHING`), e uma mensagem que não altera nada não é republicada. Reprocessar um `purchase.created` não cria uma segunda recompensa nem uma segunda entrega.
+- **Retries e mensagens ruins:** o kafkajs refaz handlers que falham, com backoff. Mensagens que não fazem parse são logadas e descartadas para não derrubar o consumer. Ainda não há dead-letter topic, então uma mensagem que continua falhando bloqueia sua partição.
+- **Lacuna conhecida:** a compra é gravada antes do evento ser publicado. Se o Kafka estiver fora nesse momento, a compra existe sem o evento. Em produção eu usaria o padrão outbox transacional: gravar o evento numa tabela `outbox` na mesma transação e um relay publica os eventos.
+- **Adições para produção:** um dead-letter topic com alertas, métricas de consumer lag e taxa de erro (Prometheus/Grafana), um schema registry para os contratos de eventos e migrations versionadas em vez de `CREATE TABLE IF NOT EXISTS` no startup.
+
 ---
 
 Demo simplificada inspirada em uma plataforma de produção orientada a eventos que construí e operei para os maiores bancos do Brasil (50+ microsserviços, 500K+ transações/dia, Kafka + Kubernetes/ArgoCD).
